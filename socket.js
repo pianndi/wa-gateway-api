@@ -1,8 +1,10 @@
-import { makeWASocket, DisconnectReason, useMultiFileAuthState, Browsers, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
+import { makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
 import pino from 'pino';
 import fs from 'fs'
+import dotenv from 'dotenv'
+dotenv.config()
 const { version, isLatest } = await fetchLatestBaileysVersion()
-const [APP_NAME, APP_OS, APP_VERSION] = ['Ekur', 'Desktop', '1.0.0']
+const { APP_NAME, APP_OS, APP_VERSION } = process.env
 export let sock, qr, auth, koneksi = 'connecting', info = {
   APP_NAME,
   APP_OS,
@@ -18,12 +20,12 @@ async function connectToWhatsApp() {
     // can provide additional config here
     version,
     browser: [`${info.APP_NAME} `, info.APP_OS, info.APP_VERSION],
-    printQRInTerminal: true,
+    // printQRInTerminal: true,
     auth: state,
     logger: pino({ level: 'silent' }),
   });
 
-  sock.ev.on("connection.update", (update) => {
+  sock.ev.on("connection.update", async (update) => {
     const { connection } = update;
     if (connection) {
       koneksi = connection;
@@ -38,7 +40,11 @@ async function connectToWhatsApp() {
         "\n, reconnecting... "
       );
       if (update.lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut) {
-        fs.rmSync('auth_info', { recursive: true, force: true });
+        try {
+          await fs.promises.rm('auth_info', { recursive: true, force: true });
+        } catch (error) {
+          console.log('failed to delete auth_info', error)
+        }
 
         // exit the process and restart
       }

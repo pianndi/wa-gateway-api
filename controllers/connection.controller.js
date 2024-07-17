@@ -1,24 +1,16 @@
 import qrImage from 'qr-image';
 import { sock, auth, info, koneksi, qr as qrCode } from "../socket.js";
-const code = async (req, res) => {
-  if (koneksi !== 'connecting') {
-    const me = auth?.creds?.me
-    me.profile = await sock.profilePictureUrl(me?.id, 'image')
-    return res.status(500).json({ message: 'WA sudah terhubung', data: { CONNECTION: koneksi, ...info, me } });
-  }
-  const { number } = req.body
-  const pairingCode = await sock.requestPairingCode(number)
-  return res.json({
-    message: 'Berhasil', data: {
-      pairingCode
-    }
-  });
-}
+
 const get = async (req, res) => {
-  if (koneksi !== 'connecting') {
+  if (koneksi === 'open') {
     const me = auth?.creds?.me
     me.platform = auth?.creds?.platform
-    me.profile = await sock.profilePictureUrl(me?.id, 'image')
+    let profile = null
+    try {
+      profile = await sock.profilePictureUrl(me?.id, 'image')
+    } catch (error) {
+    }
+    me.profile = profile
     return res.status(500).json({ message: 'WA sudah terhubung', data: { CONNECTION: koneksi, ...info, me } });
   }
   if (!qrCode) {
@@ -31,6 +23,13 @@ const get = async (req, res) => {
       ...info
     }
   });
+}
+const status = (req, res) => {
+  if (koneksi === 'open') {
+    const me = auth?.creds?.me
+    return res.status(200).json({ message: 'WA sudah terhubung', data: { ...info, me } });
+  }
+  return res.status(204).json({ message: 'WA belum terhubung', data: { ...info } });
 }
 const qr = (req, res) => {
   if (!qrCode) {
@@ -48,7 +47,11 @@ const logout = async (req, res) => {
   if (koneksi !== 'open') {
     return res.status(500).json({ message: 'WA belum terhubung' });
   }
-  await sock.logout('logout');
-  res.json({ message: 'Logged out' });
+  try {
+    await sock.logout('logout');
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to logout' });
+  }
+  return res.json({ message: 'Logged out' });
 }
-export default { get, qr, logout, code }
+export default { get, qr, logout, status }

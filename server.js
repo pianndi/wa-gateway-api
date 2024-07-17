@@ -1,11 +1,13 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+dotenv.config();
 import { koneksi, info } from './socket.js';
 
 import sendRouter from './routes/send.route.js';
-import miscRouter from './routes/misc.route.js';
 import connectionRouter from './routes/connection.route.js';
-
+const { PORT } = process.env;
+console.log(PORT)
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -16,7 +18,6 @@ app.get('/', (req, res) => {
 });
 app.use(connectionRouter)
 
-app.use('/misc', miscRouter);
 app.use((req, res, next) => {
   if (koneksi !== 'open') return res.status(500).json({ message: 'WA belum terhubung' });
   next();
@@ -29,6 +30,6 @@ app.all('*', (req, res) => {
   return res.status(404).json({ message: 'Route not found', routes });
 });
 
-app.listen(3000, () => {
+app.listen(PORT, () => {
   console.log('Server is running on http://localhost:3000');
 });

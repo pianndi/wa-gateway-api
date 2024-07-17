@@ -3,7 +3,7 @@ import connection from '../controllers/connection.controller.js';
 const connectionRouter = express.Router();
 
 connectionRouter.get('/connection', connection.get);
-// connectionRouter.post('/connection', connection.code);
+connectionRouter.get('/status', connection.status);
 connectionRouter.get('/qr', connection.qr);
 connectionRouter.delete('/logout', connection.logout);
 
